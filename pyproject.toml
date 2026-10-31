@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retrieval-ablation"
+version = "0.1.0"
+description = "How much do BM25, dense vectors, RRF fusion and a cross-encoder each add to ai-document-analyst's retrieval?"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "sentence-transformers>=2.7",
+    "tiktoken>=0.5",
+    "rank-bm25>=0.2.2",
+    "huggingface-hub>=0.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py310"
