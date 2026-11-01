@@ -117,6 +117,29 @@ def run_systems(ds: Dataset, units: Units, emb, ce, depth: int = 20, tag: str = 
     }
 
 
+def extra_systems(ds: Dataset, units: Units, emb, ce, depth: int = 20, tag: str = "") -> dict:
+    """Added after the main run showed production's whitespace tokenizer was BM25's weak point:
+    hybrid built on the word-tokenized BM25, with and without the reranker. Also re-times the
+    reranker at depth 20 on a quiet machine, since the first run's timing was noisy."""
+    bmw = BM25(units.texts, "words")
+    vecs, _ = embed_cached(emb, units.texts, tag or ds.name)
+    dense, rr = Dense(emb, vecs), Reranker(ce, units.texts)
+    qs = [q for q in ds.queries if not ds.chunked or units.coverable(q["id"])]
+    dense.search(qs[0]["query"], depth); rr.rerank(qs[0]["query"], list(range(min(5, len(units.texts)))))
+    per = {"hybrid-words": [], "hybrid-words-rerank": []}
+    top = {k: [] for k in per}
+    lat = []
+    for q in qs:
+        h = rrf(dense.search(q["query"], depth), bmw.search(q["query"], depth), top=depth)
+        t = time.perf_counter(); hr = rr.rerank(q["query"], h); lat.append(time.perf_counter() - t)
+        g = units.grades(q["id"])
+        for k, lst in (("hybrid-words", h), ("hybrid-words-rerank", hr)):
+            per[k].append(M.per_query(units.covers(q["id"], lst[:10]), g))
+            top[k].append([units.ids[i] for i in lst[:10]])
+    return {"query_ids": [q["id"] for q in qs], "per_query": per, "top10": top,
+            "rerank_s": {"p50": M.percentile(lat, 50), "p95": M.percentile(lat, 95), "mean": M.mean(lat)}}
+
+
 def depth_sweep(ds: Dataset, units: Units, emb, ce, depths=(10, 50, 100), tag: str = "") -> dict:
     bm = BM25(units.texts, "naive")
     vecs, _ = embed_cached(emb, units.texts, tag or ds.name)

@@ -98,6 +98,24 @@ def write_report(path: Path) -> Path:
         for n, per, lt in rows:
             L.append(f"| {n} | {M.mean([p['recall@5'] for p in per]):.3f} | {M.mean([p['ndcg@10'] for p in per]):.3f} | {ms(lt['p50'])} | {ms(lt['p95'])} |")
         L.append("")
+    extra = [(k, k.removeprefix("extra-")) for k in ("extra-fastapi-512", "extra-scifact", "extra-fiqa") if k in runs]
+    if extra:
+        L += ["## Added after the first run: hybrid on word-tokenized BM25", "",
+              "Not part of the plan: the first run showed production's whitespace tokenizer was BM25's weak point, so the "
+              "fusion was repeated with the word tokenizer. Same queries, same depth 20.", "",
+              "| Dataset | system | recall@5 | recall@10 | nDCG@10 | Δ recall@5 vs hybrid-rerank [95% CI] | rerank p50 / p95 ms |", "|---|---|---|---|---|---|---|"]
+        for key, base in extra:
+            e, b = runs[key], runs.get(base)
+            for sname in ("hybrid-words", "hybrid-words-rerank"):
+                pq = e["per_query"][sname]
+                cmp = ""
+                if b:
+                    p = M.paired(col(b, "hybrid-rerank", "recall@5"), [x["recall@5"] for x in pq])
+                    cmp = f"{p['diff']:+.3f} [{p['ci'][0]:+.2f}, {p['ci'][1]:+.2f}]{' *' if p['significant'] else ''}"
+                lt = f"{ms(e['rerank_s']['p50'])} / {ms(e['rerank_s']['p95'])}" if sname.endswith("rerank") else ""
+                L.append(f"| {base} | {sname} | {M.mean([x['recall@5'] for x in pq]):.3f} | {M.mean([x['recall@10'] for x in pq]):.3f} | "
+                         f"{M.mean([x['ndcg@10'] for x in pq]):.3f} | {cmp} | {lt} |")
+        L.append("")
     if "bm25-prod" in runs:
         b = runs["bm25-prod"]
         L += ["## Production BM25", "", f"Rebuilding the index on every query ({b['impl']}), 512-token chunks: p50 {ms(b['p50'])} ms, "

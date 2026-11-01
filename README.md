@@ -62,6 +62,9 @@ retriever, fused to 20, reranked.
 - chunk size 128 / 256 / 512 / 1024 tokens on the FastAPI set
 - rerank depth 10 / 20 / 50 / 100 candidates on SciFact and FastAPI (quality and latency, for H4)
 - production's BM25 path, which rebuilds the index from every stored chunk on each query
+- added after the first run, and labelled as such in the results: hybrid built on the
+  word-tokenized BM25 (`hybrid-words`, with and without the reranker), because the first run
+  showed production's whitespace tokenizer was BM25's weak point
 
 ### Changes to the plan, made before running
 

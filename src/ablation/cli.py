@@ -7,6 +7,8 @@ Steps (each saved to results/results.json as it finishes, and skipped when you r
   4. fiqa          BEIR FiQA, all systems
   5. depth         rerank depth 10 / 50 / 100 on SciFact and fastapi-512
   6. bm25-prod     latency of production's rebuild-per-query BM25 on fastapi-512
+  7. extra         added after the first run: hybrid on word-tokenized BM25 (+ reranker) on all
+                   three datasets, and the reranker re-timed at depth 20
 Then results/REPORT.md is written from the JSON.
 """
 from __future__ import annotations
@@ -58,7 +60,7 @@ def main(argv: list[str] | None = None) -> None:
         tok = Tokens()
     res["environment"] = E.environment(a.device, a.fake_models)
     res["environment"]["tiktoken"] = tok.exact
-    steps = [s for s in (a.only.split(",") if a.only else ["fastapi", "sweep", "scifact", "fiqa", "depth", "bm25-prod"]) if s]
+    steps = [s for s in (a.only.split(",") if a.only else ["fastapi", "sweep", "scifact", "fiqa", "depth", "bm25-prod", "extra"]) if s]
     fa = load_fastapi()
     units = {}
 
@@ -86,13 +88,17 @@ def main(argv: list[str] | None = None) -> None:
             step(f"fastapi-{size}", lambda s=size: E.run_systems(fa, fa_units(s), emb, ce, tag=f"fastapi-{s}"))
     beir = {}
     for name in ("scifact", "fiqa"):
-        if name in steps or (name == "scifact" and "depth" in steps):
+        if name in steps or (name == "scifact" and "depth" in steps) or "extra" in steps:
             beir[name] = load_beir(name)
         if name in steps:
             step(name, lambda n=name: E.run_systems(beir[n], E.Units(beir[n], None, tok), emb, ce))
     if "depth" in steps:
         step("depth-scifact", lambda: E.depth_sweep(beir["scifact"], E.Units(beir["scifact"], None, tok), emb, ce))
         step("depth-fastapi-512", lambda: E.depth_sweep(fa, fa_units(512), emb, ce, tag="fastapi-512"))
+    if "extra" in steps:
+        step("extra-fastapi-512", lambda: E.extra_systems(fa, fa_units(512), emb, ce, tag="fastapi-512"))
+        for name in ("scifact", "fiqa"):
+            step(f"extra-{name}", lambda n=name: E.extra_systems(beir[n], E.Units(beir[n], None, tok), emb, ce))
     if "bm25-prod" in steps:
         step("bm25-prod", lambda: E.production_bm25_latency(fa_units(512), fa.queries))
 
