@@ -1,7 +1,19 @@
 # Retrieval ablation: does hybrid search plus reranking pay for itself?
 
-> Status: **code ready, not run yet.** The hypotheses below were written before any run and are
-> not edited afterwards. A false hypothesis gets reported the same way as a true one.
+> Status: **run on 31 October 2026. Full write-up in [RESULTS.md](RESULTS.md).** The hypotheses
+> below were written before the run and are not edited afterwards.
+
+## Headline result
+
+- Production's BM25 splits on whitespace, so punctuation sticks to words. Tokenizing on word
+  characters lifted its recall@5 from 55% to 78% on the FastAPI questions, and to 30 of 30 on
+  questions with an exact term.
+- With the production tokenizer, hybrid search added nothing significant over dense retrieval,
+  and on FiQA it was 3 points worse.
+- The cross-encoder improved ranking (nDCG@10 +4 to +12 points) far more than recall, and took over
+  95% of query time on CPU; reranking 10 candidates instead of 20 halved that at the same quality.
+- With the tokenizer fixed, hybrid + reranker reached 90% recall@5 on FastAPI (production: 87%),
+  a lead that 60 questions can't confirm.
 
 [ai-document-analyst](https://github.com/jpgg2105/ai-document-analyst) retrieves with three pieces:
 BM25 keyword search, dense vectors (`all-MiniLM-L6-v2`), and a cross-encoder reranker
