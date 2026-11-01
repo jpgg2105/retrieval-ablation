@@ -46,9 +46,9 @@ it costs in latency.
   SciFact (300 scientific claims, 5,183 abstracts) and FiQA (648 financial questions, 57,638 posts).
   BEIR queries are split into "exact" and "other" by a rule fixed before running
   (`has_exact_term` in `src/ablation/data.py`: a token with a digit, or with two or more capitals).
-- 60 questions over FastAPI's documentation (116 pages, MIT licence, pinned to commit `45cb225`),
+- 60 questions over FastAPI's documentation (116 pages, MIT license, pinned to commit `45cb225`),
   written for this project: 30 contain an exact term (a parameter name, a header, a CLI flag, a
-  status code) and 30 describe the need in other words. Each is labelled with a short verbatim
+  status code) and 30 describe the need in other words. Each is labeled with a short verbatim
   passage that answers it, and a chunk counts as relevant when it contains the passage, so the
   labels hold for any chunk size. `scripts/fastapi_questions.py` checks every passage against the
   corpus.
@@ -76,7 +76,7 @@ retriever, fused to 20, reranked.
 - chunk size 128 / 256 / 512 / 1024 tokens on the FastAPI set
 - rerank depth 10 / 20 / 50 / 100 candidates on SciFact and FastAPI (quality and latency, for H4)
 - production's BM25 path, which rebuilds the index from every stored chunk on each query
-- added after the first run, and labelled as such in the results: hybrid built on the
+- added after the first run, and labeled as such in the results: hybrid built on the
   word-tokenized BM25 (`hybrid-words`, with and without the reranker), because the first run
   showed production's whitespace tokenizer was BM25's weak point
 
@@ -120,4 +120,4 @@ third of the exact-term queries". The point is the measured trade-off, not a win
 - Nogueira & Cho (2019). Passage Re-ranking with BERT. arXiv:1901.04085.
 - Thakur et al. (2021). BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models. NeurIPS Datasets and Benchmarks.
 - Reimers & Gurevych (2019). Sentence-BERT. EMNLP.
-- FastAPI documentation, © 2018 Sebastián Ramírez, MIT licence (`data/fastapi/LICENSE`).
+- FastAPI documentation, © 2018 Sebastián Ramírez, MIT license (`data/fastapi/LICENSE`).
