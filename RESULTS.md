@@ -12,7 +12,7 @@ the tables come from `results/REPORT.md`. Intervals are 95% bootstrap intervals 
   words. Splitting on word characters lifts BM25's recall@5 on the FastAPI questions from 55% to
   78% (+23 points, significant), and on the 30 questions with an exact term it finds the answer in
   **30 of 30**, more than dense retrieval (26 of 30).
-- **With that tokenizer, hybrid adds nothing over dense retrieval.** Hybrid vs dense: +1.7 points
+- **With production's tokenizer, hybrid adds nothing over dense retrieval.** Hybrid vs dense, recall@5: +1.7 points
   on FastAPI and −1.7 on SciFact, neither significant, and −3.0 on FiQA (significant). A weak
   keyword list mostly dilutes the dense list in the fusion.
 - **The reranker reorders more than it finds**, and it is the expensive part. It raises nDCG@10
@@ -26,15 +26,19 @@ the tables come from `results/REPORT.md`. Intervals are 95% bootstrap intervals 
   is the best system on FastAPI at 90% recall@5, with all 30 exact-term questions answered. Its
   lead over the production pipeline (87%) and over dense + reranker (85%) is not significant on
   60 questions.
+- **Fusion only helped once BM25 was fixed, and only at depth 10.** At recall@5, hybrid never
+  significantly beat the better of its two inputs, with either tokenizer. At recall@10, hybrid with
+  the word tokenizer beat dense by 5.6 points on SciFact [+2.2, +9.1] and 6.7 on FastAPI [0, +15],
+  and tied on FiQA (+0.6). Production's hybrid didn't beat dense significantly anywhere.
 
 ## Hypotheses (written before running)
 
 | | Hypothesis | Result |
 |---|---|---|
-| H1 | Hybrid beats both single retrievers on recall@10 | **Partly.** It always beats BM25 by a wide margin; against dense it is ahead on FastAPI (+3.3) and SciFact (+2.4), not significant, and behind on FiQA (−1.4). |
+| H1 | Hybrid beats both single retrievers on recall@10 | **Not supported against dense.** It always beats production BM25 by a wide margin; against dense it is ahead on FastAPI (+3.3) and SciFact (+2.4) and behind on FiQA (−1.4), none significant. With the word tokenizer (added after the run): +6.7, +5.6 (significant) and +0.6. |
 | H2 | The cross-encoder raises nDCG@10 more than recall@10 | **True** on all three: +12.4 vs +1.7 points (FastAPI), +4.6 vs +2.2 (SciFact), +3.9 vs +2.0 (FiQA). |
-| H3 | BM25's advantage over dense is largest on exact-term queries | **False with production's tokenizer**, which never beats dense. **True with the word tokenizer on FastAPI**: BM25 leads dense by 13 points on exact-term questions (significant) and trails by 10 on paraphrased ones. Not on the BEIR sets, where the exact-term split comes from a rule. |
-| H4 | The reranker adds the most latency, roughly linear in candidates | **True.** SciFact, one session: 352 ms for 10 candidates, 780 ms for 20, 1,578 ms for 50, 2,982 ms for 100. |
+| H3 | BM25's advantage over dense is largest on exact-term queries | **False with production's tokenizer**, which never beats dense. **True with the word tokenizer on FastAPI**: BM25 leads dense by 13 points on exact-term questions (30/30 vs 26/30) and trails by 10 on paraphrased ones. The bootstrap interval excludes zero, but only 4 exact-term questions differ (all 4 in BM25's favour; exact McNemar p = 0.125), so this is suggestive, not established. Not on the BEIR sets, where the exact-term split comes from a rule. |
+| H4 | The reranker adds the most latency, roughly linear in candidates | **True in shape.** SciFact, one session: 352 ms for 10 candidates, 780 ms for 20, 1,578 ms for 50, 2,982 ms for 100. Absolute times varied by more than 2× between sessions, so only the within-session shape is reliable. |
 
 ## Main comparison, production settings
 

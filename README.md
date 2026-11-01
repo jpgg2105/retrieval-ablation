@@ -10,6 +10,8 @@
   questions with an exact term.
 - With the production tokenizer, hybrid search added nothing significant over dense retrieval,
   and on FiQA it was 3 points worse.
+  With the word tokenizer, fusion beat dense on recall@10 (significantly on SciFact), but at
+  recall@5 it never significantly beat the better single retriever.
 - The cross-encoder improved ranking (nDCG@10 +4 to +12 points) far more than recall, and took over
   95% of query time on CPU; reranking 10 candidates instead of 20 halved that at the same quality.
 - With the tokenizer fixed, hybrid + reranker reached 90% recall@5 on FastAPI (production: 87%),
